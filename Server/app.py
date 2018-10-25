@@ -1,7 +1,7 @@
 from werkzeug.wsgi import DispatcherMiddleware
 from spyne.server.wsgi import WsgiApplication
 from spyne import Iterable, Integer, Unicode, srpc, rpc, Application, DateTime
-from spyne.model.primitive import String, Double, Integer, Time, AnyXml, AnyDict
+from spyne.model.primitive import String, Double, Integer, Time, AnyXml, AnyDict, Float
 from spyne.service import ServiceBase
 from spyne.protocol.soap import Soap11
 from spyne.protocol.xml import XmlDocument
@@ -55,7 +55,63 @@ class StudentService(ServiceBase):
         student_info = [sName, sNumber, sFovorite[0], sFovorite[1]]
         return student_info
 
-application = Application([AirService, StudentService],
+class TransportInfo(ComplexModel):
+    __namespace__ = "transportInfo"
+
+    name = String
+    dest = String
+    weight = Float
+    status = String
+class TransportService(ServiceBase):
+    @srpc(String, String, Double)
+    def addDestinationInfo(name, address, weight):
+        destInfo = [name, address, weight, 'sending']
+        with open('transportInfo.csv', 'a') as csvFile:
+            writer = csv.writer(csvFile)
+            writer.writerow(destInfo)
+        csvFile.close()
+
+    @srpc(String)
+    def destinationSent(name):
+        name = "'"+name+"'"
+        status = 'sent'
+        all_row = []
+        with open('transportInfo.csv') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            for row in csv_reader:
+                if len(row) < 4:
+                    continue
+                data = []
+                for each in row:
+                    data.append(each)
+                if data[0]==name:
+                    data[3] = status
+                all_row.append(data)
+            csv_file.close()
+
+        f = open("transportInfo.csv", "w")
+        f.truncate()
+        f.close()
+
+        with open('transportInfo.csv', 'a') as csvFile:
+            writer = csv.writer(csvFile)
+            for row in all_row:
+                writer.writerow(row)
+            csvFile.close()
+
+    @srpc(String ,_returns=TransportInfo)
+    def transportStatus(name='None'):
+        with open('transportInfo.csv') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            for row in csv_reader:                
+                if len(row) < 4:
+                    continue
+                data = []
+                for each in row:
+                    data.append(each)
+                if data[0]==name or data[0]=="'"+name+"'":
+                    return row
+application = Application([AirService, StudentService, TransportService],
     tns='spyne.examples.cctv',
     in_protocol=Soap11(validator='lxml'),
      out_protocol=Soap11())
