@@ -38,10 +38,29 @@ class AirService(ServiceBase):
         f.truncate()
         f.close()
 
-application = Application([AirService],
+class Student(ComplexModel):
+    __namespace__ = "student"
+
+    username = String
+    userid = Integer
+    fovorite1 = String
+    fovorite2 = String
+
+class StudentService(ServiceBase):
+    @srpc(_returns=Student)
+    def studentInfo():
+        sName = 'Phutthinan Setnoi'
+        sNumber = 5801012630149
+        sFovorite = ['reading novel', 'reading a book']
+        student_info = [sName, sNumber, sFovorite[0], sFovorite[1]]
+        return student_info
+
+application = Application([AirService, StudentService],
     tns='spyne.examples.cctv',
     in_protocol=Soap11(validator='lxml'),
      out_protocol=Soap11())
+
+
 
 app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
     '/soap': WsgiApplication(application)
