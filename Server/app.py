@@ -62,6 +62,7 @@ class TransportInfo(ComplexModel):
     dest = String
     weight = Float
     status = String
+
 class TransportService(ServiceBase):
     @srpc(String, String, Double)
     def addDestinationInfo(name, address, weight):
@@ -100,7 +101,7 @@ class TransportService(ServiceBase):
             csvFile.close()
 
     @srpc(String ,_returns=TransportInfo)
-    def transportStatus(name='None'):
+    def transportStatus(name=None):
         with open('transportInfo.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for row in csv_reader:                
