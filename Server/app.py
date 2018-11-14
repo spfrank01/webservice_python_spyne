@@ -11,8 +11,11 @@ from flask import Flask
 
 import xml.etree.ElementTree as et
 import csv
+import bcrypt
 
 app = Flask(__name__)
+password = b"selecttopic"
+password_hash = bcrypt.hashpw(password, bcrypt.gensalt())
 
 class AirService(ServiceBase):
     @srpc(_returns=Iterable(String))
@@ -38,6 +41,17 @@ class AirService(ServiceBase):
         f.truncate()
         f.close()
 
+    @srpc(String, _returns=Iterable(String))
+    def test_query_air_info(password):
+        if bcrypt.checkpw(password.encode('utf8'), password_hash) == False:
+            return None
+        tree = et.parse('food.xml')
+        #yield tree.getroot()
+        with open('airdata.csv') as csvDataFile:
+            csvReader = csv.reader(csvDataFile)
+            for row in csvReader:
+                yield str(row)
+                
 class Student(ComplexModel):
     __namespace__ = "student"
 
